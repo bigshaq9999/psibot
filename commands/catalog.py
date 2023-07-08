@@ -1,14 +1,15 @@
 import requests
 import re
 import html
+from bs4 import BeautifulSoup
 
-
-TAG_RE = re.compile(r'<[^>]+>')
-
-def remove_tags(text):
+def remove_tags(text:str):
+    text = re.sub(r'<wbr>', '', text)
     text = html.unescape(text)
-    # return text
-    return TAG_RE.sub('', text)
+    text = text.replace('\\/', '/')
+    soup = BeautifulSoup(text, 'html.parser')
+    plain_text = soup.get_text(separator='\n')
+    return plain_text
 
 def generate_catalog(board: str, keyword: str) -> list:
     url = f'https://a.4cdn.org/{board}/catalog.json'
@@ -20,17 +21,17 @@ def generate_catalog(board: str, keyword: str) -> list:
     for page in data:
         threads = []
         for thread in page['threads']:
-            if 'sub' in thread and keyword in thread['sub']:
-                thread_info_list = [
-                    f"ID: {thread['no']}",
-                    f"SUB: {thread['sub']}",
-                    f"STATUS: {'closed 🔒' if 'closed' in thread else 'alive 🔓'}",
-                    f"REPLIES: {thread['replies']}",
-                    f"IMAGES: {thread['images']}",
-                    f"\nCOMMENT: {remove_tags(thread['com'][:2000]) if 'com' in thread else 'NO COMMENT'}\n"
-                ]
-                thread_info = "\n".join(thread_info_list)
-                threads.append(thread_info)
+            if 'sub' in thread and keyword.lower() in thread['sub'].lower():
+                thread_info_dict = {
+                    'ID': thread['no'],
+                    'SUB': thread['sub'],
+                    'STATUS': 'closed 🔒' if 'closed' in thread else 'alive 🔓',
+                    'REPLIES': thread['replies'],
+                    'IMAGES': thread['images'],
+                    'COMMENT': remove_tags(thread['com']) if 'com' in thread else 'NO COMMENT'
+                }
+                # thread_info = "\n".join(thread_info_dict)
+                threads.append(thread_info_dict)
         catalog.append({'page': page['page'], 'threads': threads})
 
     return catalog
@@ -42,4 +43,5 @@ if __name__ == '__main__':
     for page in catalog:
         # print(f"PAGE {page['page']}\n\n")
         for thread in page['threads']:
-            print(thread)
+            for key, element in thread.items():
+                print(key, element)
