@@ -55,21 +55,6 @@ async def four_arithmetic(interaction: discord.Interaction, num1: float, num2: f
 
 @client.tree.command()
 @app_commands.describe(board="the catalog of this board")
-# async def catalog_search(interaction: discord.Interaction, board: str, keyword: str):
-#     await interaction.response.send_message(f"Catalog of /{board}/ was requested.", ephemeral=True)
-#     catalog_data = generate_catalog(board, keyword)
-#     for page in catalog_data:
-#         for thread in page['threads']:
-#             embed = discord.Embed(title=thread['SUB'], url=f'https://boards.4channel.org/{board}/thread/{thread["ID"]}', color=0xFF5733)
-#             for name, value in thread.items():
-#                 if name == 'COMMENT' and len(value) > 1024:
-#                     # Split the COMMENT field into two fields
-#                     embed.add_field(name=name, value=value[:1024], inline=False)
-#                     embed.add_field(name='\u200B', value=value[1024:], inline=False)
-#                 else:
-#                     embed.add_field(name=name, value=value, inline=False)
-#             await interaction.followup.send(embed=embed) 
-
 async def catalog_search(interaction: discord.Interaction, board: str, keyword: str):
     await interaction.response.send_message(f"Catalog of /{board}/ was requested.", ephemeral=True)
     catalog_data = generate_catalog(board, keyword)
