@@ -18,7 +18,8 @@ DISCORD_BOT_TOKEN = your_bot_token_here
 GUILD_ID = your_guild_id_here
 ```
 
-Make sure to replace `your_bot_token_here` and `your_guild_id_here` with your bot token and guild ID, respectively.
+Make sure to replace `your_bot_token_here` and `your_guild_id_here` with your bot token and guild ID, respectively.  
+
 3. Run the bot by running `python main.py`.
 
 ## Usage 🎮
