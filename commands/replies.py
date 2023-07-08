@@ -1,12 +1,15 @@
 import requests
 import re
 import html
+from bs4 import BeautifulSoup
 
-TAG_RE = re.compile(r'<[^>]+>')
-
-def remove_tags(text):
+def remove_tags(text:str):
+    text = re.sub(r'<wbr>', '', text)
     text = html.unescape(text)
-    return TAG_RE.sub('', text)
+    text = text.replace('\\/', '/')
+    soup = BeautifulSoup(text, 'html.parser')
+    plain_text = soup.get_text(separator='\n')
+    return plain_text
 
 def get_thread_replies(board: str, thread_id: str) -> list:
     url = f'https://a.4cdn.org/{board}/thread/{thread_id}.json'
