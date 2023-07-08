@@ -5,6 +5,7 @@ pkgs.mkShell {
     python310Packages.ffmpeg-python
     python310Packages.yt-dlp
     python310Packages.requests
+    python310Packages.beautifulsoup4
   ];
 }
 
