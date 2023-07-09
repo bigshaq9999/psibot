@@ -1,15 +1,14 @@
 import requests
-import re
-import html
-from bs4 import BeautifulSoup
 
-def remove_tags(text:str):
-    text = re.sub(r'<wbr>', '', text)
-    text = html.unescape(text)
-    text = text.replace('\\/', '/')
-    soup = BeautifulSoup(text, 'html.parser')
-    plain_text = soup.get_text(separator='\n')
-    return plain_text
+import os
+import sys
+current_file = os.path.abspath(__file__)
+current_dir = os.path.dirname(current_file)
+parent_dir = os.path.dirname(current_dir)
+commands_dir = os.path.join(parent_dir, 'commands')
+sys.path.append(commands_dir)
+from remove_tags import remove_tags
+
 
 def generate_catalog(board: str, keyword: str) -> list:
     url = f'https://a.4cdn.org/{board}/catalog.json'
@@ -23,12 +22,12 @@ def generate_catalog(board: str, keyword: str) -> list:
         for thread in page['threads']:
             if 'sub' in thread and keyword.lower() in thread['sub'].lower():
                 thread_info_dict = {
-                    'ID': thread['no'],
+                    'ID 🔑': thread['no'],
                     'SUB': thread['sub'],
                     'STATUS': 'closed 🔒' if 'closed' in thread else 'alive 🔓',
                     'REPLIES': thread['replies'],
-                    'IMAGES': thread['images'],
-                    'COMMENT': remove_tags(thread['com']) if 'com' in thread else 'NO COMMENT'
+                    'IMAGES 🖼️': thread['images'],
+                    'COMMENT 💬': remove_tags(thread['com']) if 'com' in thread else 'NO COMMENT'
                 }
                 # thread_info = "\n".join(thread_info_dict)
                 threads.append(thread_info_dict)
