@@ -40,6 +40,19 @@ async def on_ready():
     print(f'Logged in as {client.user} (ID: {client.user.id})')
     print('------')
 
+def add_fields_to_embed(embed, thread):
+    for name, value in thread.items():
+        if name == comment_field and len(value) > field_char_limit:
+            split_pos = value.rfind('\n', 0, field_char_limit)
+            if split_pos == -1:
+                split_pos = field_char_limit
+            embed.add_field(name=name, value=value[:split_pos], inline=False)
+            embed.add_field(name=zero_width_space, value=value[split_pos:], inline=False)
+        elif name == link_field:
+            embed.set_image(url=value)
+        else:
+            embed.add_field(name=name, value=value, inline=False)
+
 @client.tree.command()
 @app_commands.describe(num1="first number", num2="second number")
 async def four_arithmetic(interaction: discord.Interaction, num1: float, num2: float):
@@ -57,29 +70,20 @@ id_field = 'ID 🔑'
 comment_field = 'COMMENT 💬'
 time_field = 'TIME 🕖'
 link_field = 'LINK 🌐'
+field_char_limit = 1024
+zero_width_space = '\u200B'
 
 @client.tree.command()
 @app_commands.describe(board="the catalog of this board")
 async def catalog_search(interaction: discord.Interaction, board: str, keyword: str):
     catalog_data = generate_catalog(board, keyword)
-    await interaction.response.send_message(f"Catalog of /{board}/ was requested.", ephemeral=True)
+    await interaction.response.send_message(f"Catalog of /{board}/ was requested.", ephemeral=True)    
+
     for page in catalog_data:
         for thread in page['threads']:
             embed = discord.Embed(title=thread['SUB'], url=f'https://boards.4channel.org/{board}/thread/{thread[id_field]}', color=DEEP_PINK)
-            for name, value in thread.items():
-                field_char_limit = 1024
-                if name == comment_field and len(value) > field_char_limit:
-                    split_pos = value.rfind('\n', 0, field_char_limit)
-                    if split_pos == -1:
-                        split_pos = field_char_limit
-                    embed.add_field(name=name, value=value[:split_pos], inline=False)
-                    zero_width_space = '\u200B'
-                    embed.add_field(name=zero_width_space, value=value[split_pos:], inline=False)
-                else:
-                    embed.add_field(name=name, value=value, inline=False)
+            add_fields_to_embed(embed, thread)
             await interaction.followup.send(embed=embed) 
-
-
 
 @client.tree.command()
 @app_commands.describe(board="the board on which the thread exists", thread_id='the id of the thread')
@@ -88,21 +92,8 @@ async def replies(interaction: discord.Interaction, board: str, thread_id: int):
     
     url = f'https://boards.4channel.org/{board}/thread/{thread_id}'
     embed_op = discord.Embed(title="OP's post", url=url, color=DEEP_PINK)
-    for name, value in replies[0].items():
-        field_char_limit = 1024
-        if name == time_field:
-            embed_op.add_field(name=name, value=f"<t:{value}>", inline=False)
-        elif name == comment_field and len(value) > field_char_limit:
-            split_pos = value.rfind('\n', 0, field_char_limit)
-            if split_pos == -1:
-                split_pos = field_char_limit
-            embed_op.add_field(name=name, value=value[:split_pos], inline=False)
-            zero_width_space = '\u200B'
-            embed_op.add_field(name=zero_width_space, value=value[split_pos:], inline=False)
-        elif name == link_field:
-            embed_op.set_image(url=value)
-        else:
-            embed_op.add_field(name=name, value=value, inline=False)
+
+    add_fields_to_embed(embed_op, replies[0])
     await interaction.response.send_message(embed=embed_op, ephemeral=True)
 
     reply_count = 0
@@ -112,20 +103,10 @@ async def replies(interaction: discord.Interaction, board: str, thread_id: int):
             if embed is not None:
                 await interaction.followup.send(embed=embed, ephemeral=True)
             embed = discord.Embed(title=f"<t:{reply[time_field]}>", url=f'https://boards.4channel.org/{board}/thread/{reply[id_field]}', color=DEEP_PINK)
-        for name, value in reply.items():
-            field_char_limit = 1024
-            if name == comment_field and len(value) > field_char_limit:
-                split_pos = value.rfind('\n', 0, field_char_limit)
-                if split_pos == -1:
-                    split_pos = field_char_limit
-                embed.add_field(name=name, value=value[:split_pos], inline=False)
-                zero_width_space = '\u200B'
-                embed.add_field(name=zero_width_space, value=value[split_pos:], inline=False)
-            elif name == link_field:
-                embed.set_image(url=value)
-            else:
-                embed.add_field(name=name, value=value, inline=False)
+        add_fields_to_embed(embed, reply)
         reply_count += 1
+        if reply_count % 5 != 0:
+            embed.add_field(name=zero_width_space, value=zero_width_space, inline=False)
     if embed is not None:
         await interaction.followup.send(embed=embed, ephemeral=True)
 
