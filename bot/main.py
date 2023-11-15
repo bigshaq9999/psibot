@@ -6,6 +6,9 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from commands.catalog import generate_catalog
 from commands.replies import get_thread_replies
+from commands.test_embed import cmd_embed 
+from paginator import Paginator
+from add_fields_to_embed import add_fields_to_embed
 
 import configparser
 
@@ -40,50 +43,22 @@ async def on_ready():
     print(f'Logged in as {client.user} (ID: {client.user.id})')
     print('------')
 
-def add_fields_to_embed(embed, thread):
-    for name, value in thread.items():
-        if name == comment_field and len(value) > field_char_limit:
-            split_pos = value.rfind('\n', 0, field_char_limit)
-            if split_pos == -1:
-                split_pos = field_char_limit
-            embed.add_field(name=name, value=value[:split_pos], inline=False)
-            embed.add_field(name=zero_width_space, value=value[split_pos:], inline=False)
-        elif name == link_field:
-            embed.set_image(url=value)
-        else:
-            embed.add_field(name=name, value=value, inline=False)
-
-@client.tree.command()
-@app_commands.describe(num1="first number", num2="second number")
-async def four_arithmetic(interaction: discord.Interaction, num1: float, num2: float):
-    embed = discord.Embed(title="Four Arithmetic Operations", color=DEEP_PINK)
-    embed.add_field(name="Addition", value=f"{num1} + {num2} = {num1 + num2}", inline=False)
-    embed.add_field(name="Subtraction", value=f"{num1} - {num2} = {num1 - num2}", inline=False)
-    embed.add_field(name="Multiplication", value=f"{num1} * {num2} = {num1 * num2}", inline=False)
-    try:
-        embed.add_field(name="Division", value=f"{num1} / {num2} = {num1 / num2}", inline=False)
-    except ZeroDivisionError:
-        embed.add_field(name="Division", value="Cannot divide by zero.", inline=False)
-    await interaction.response.send_message(embed=embed)
-
 id_field = 'ID 🔑'
-comment_field = 'COMMENT 💬'
 time_field = 'TIME 🕖'
-link_field = 'LINK 🌐'
-field_char_limit = 1024
-zero_width_space = '\u200B'
 
 @client.tree.command()
 @app_commands.describe(board="the catalog of this board")
 async def catalog_search(interaction: discord.Interaction, board: str, keyword: str):
+    embeds = []
     catalog_data = generate_catalog(board, keyword)
-    await interaction.response.send_message(f"Catalog of /{board}/ was requested.", ephemeral=True)    
 
     for page in catalog_data:
         for thread in page['threads']:
             embed = discord.Embed(title=thread['SUB'], url=f'https://boards.4channel.org/{board}/thread/{thread[id_field]}', color=DEEP_PINK)
             add_fields_to_embed(embed, thread)
-            await interaction.followup.send(embed=embed) 
+            embeds.append(embed)
+    paginator = Paginator(interaction, embeds)
+    await interaction.response.send_message(embed=embeds[0], view=paginator) 
 
 @client.tree.command()
 @app_commands.describe(board="the board on which the thread exists", thread_id='the id of the thread')
@@ -110,14 +85,22 @@ async def replies(interaction: discord.Interaction, board: str, thread_id: int):
     if embed is not None:
         await interaction.followup.send(embed=embed, ephemeral=True)
 
-
-
 @client.tree.command()
 @app_commands.describe()
 async def test_embed(interaction: discord.Interaction):
-    embed = discord.Embed(title="Sample Embed", url="https://4chan.org/", description="This is an embed of 4chan", color=DEEP_PINK)
-    embed.add_field(name='', value='test')
+    embed=cmd_embed()
     await interaction.response.send_message(embed=embed)
+
+@client.tree.command() # replace with your guild id
+async def paginate(interaction: discord.Interaction):
+    embeds = [
+        discord.Embed(title="Page 1", description="This is the first page", color=discord.Color.red()),
+        discord.Embed(title="Page 2", description="This is the second page", color=discord.Color.green()),
+        discord.Embed(title="Page 3", description="This is the third page", color=discord.Color.blue())
+    ]
+    paginator = Paginator(interaction, embeds)
+    await interaction.response.send_message(embed=embeds[0], view=paginator)
+
 
 
 client.run(get_token())
