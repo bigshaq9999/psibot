@@ -23,11 +23,10 @@ def generate_catalog(board: str, keyword: str) -> list:
             if 'sub' in thread and keyword.lower() in thread['sub'].lower():
                 thread_info_dict = {
                     'ID 🔑': thread['no'],
+                    'COMMENT 💬': remove_tags(thread['com']) if 'com' in thread else 'NO COMMENT',
                     'SUB': thread['sub'],
-                    'STATUS': 'closed 🔒' if 'closed' in thread else 'alive 🔓',
                     'REPLIES': thread['replies'],
-                    'IMAGES 🖼️': thread['images'],
-                    'COMMENT 💬': remove_tags(thread['com']) if 'com' in thread else 'NO COMMENT'
+                    'IMAGES 🖼️': thread['images']
                 }
                 # thread_info = "\n".join(thread_info_dict)
                 threads.append(thread_info_dict)

@@ -14,10 +14,14 @@ import configparser
 
 DEEP_PINK = 0xe6528b
 
-def get_token():
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-    return config['DEFAULT']['DISCORD_BOT_TOKEN']
+def get_token(filename):
+    try:
+        config = configparser.ConfigParser()
+        config.read(filename)
+        return config['DEFAULT'].get('DISCORD_BOT_TOKEN')
+    except (FileNotFoundError, configparser.Error):
+        print("Configuration file not found")
+        return None
 
 def get_guild_id():
     config = configparser.ConfigParser()
@@ -45,6 +49,7 @@ async def on_ready():
 
 id_field = 'ID 🔑'
 time_field = 'TIME 🕖'
+zero_width_space = '\u200B'
 
 @client.tree.command()
 @app_commands.describe(board="the catalog of this board")
@@ -58,7 +63,10 @@ async def catalog_search(interaction: discord.Interaction, board: str, keyword: 
             add_fields_to_embed(embed, thread)
             embeds.append(embed)
     paginator = Paginator(interaction, embeds)
-    await interaction.response.send_message(embed=embeds[0], view=paginator) 
+    if len(embeds) > 1:
+        await interaction.response.send_message(embed=embeds[0], view=paginator) 
+    else: 
+        await interaction.response.send_message(embed=embeds[0]) 
 
 @client.tree.command()
 @app_commands.describe(board="the board on which the thread exists", thread_id='the id of the thread')
@@ -85,22 +93,4 @@ async def replies(interaction: discord.Interaction, board: str, thread_id: int):
     if embed is not None:
         await interaction.followup.send(embed=embed, ephemeral=True)
 
-@client.tree.command()
-@app_commands.describe()
-async def test_embed(interaction: discord.Interaction):
-    embed=cmd_embed()
-    await interaction.response.send_message(embed=embed)
-
-@client.tree.command() # replace with your guild id
-async def paginate(interaction: discord.Interaction):
-    embeds = [
-        discord.Embed(title="Page 1", description="This is the first page", color=discord.Color.red()),
-        discord.Embed(title="Page 2", description="This is the second page", color=discord.Color.green()),
-        discord.Embed(title="Page 3", description="This is the third page", color=discord.Color.blue())
-    ]
-    paginator = Paginator(interaction, embeds)
-    await interaction.response.send_message(embed=embeds[0], view=paginator)
-
-
-
-client.run(get_token())
+client.run(get_token('config.ini'))
